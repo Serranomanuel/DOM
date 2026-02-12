@@ -24,6 +24,11 @@
 const userForm = document.getElementById('messageForm'); 
 const userNameInput = document.getElementById('userName');
 
+//Formulario consulta tareas
+const messageForm = document.getElementById('messageForm'); // Form consulta
+const taskForm = document.getElementById('taskForm');       // Form tareas
+const taskSection = document.getElementById('taskSection');
+
 // Botón de consulta
 const btnVerifyUser = document.getElementById('submitBtn');
 
@@ -208,6 +213,21 @@ function showEmptyState() {
     if (emptyState) emptyState.classList.remove('hidden')
 }
 
+function resetAppState() {
+    // Borra las tareas visuales y regresa el mensaje de "No hay tareas"
+    messagesContainer.innerHTML = ''; 
+    messagesContainer.appendChild(emptyState);
+    
+    // Resetea contadores y lógica
+    totalMessages = 0;
+    currentUser = null;
+    updateMessageCount();
+    showEmptyState();
+
+    // Bloquea la sección de tareas por seguridad
+    taskSection.classList.add('disabled-section');
+}
+
 
 // ============================================
 // 3. CREACIÓN DE ELEMENTOS
@@ -218,7 +238,7 @@ function showEmptyState() {
  * @param {string} userName - Nombre del usuario
  * @param {string} message - Contenido del mensaje
  */
-function createMessageElement(userName, message) {
+function createMessageElement(userName, title, message, status) {
     // TODO: Implementar la creación de un nuevo mensaje
     
     // PASO 1: Crear el contenedor principal del mensaje
@@ -247,6 +267,32 @@ function createMessageElement(userName, message) {
     // PASO 5: Actualizar el contador visual
     
     // PASO 6: Ocultar el estado vacío si está visible
+
+    // Creación dinámica de la tarjeta de tarea
+    const card = document.createElement('div');
+    card.className = 'message-card';
+    
+    //Estructura HTML inyectada con datos dinámicos
+    card.innerHTML = `
+        <div class="message-card__header">
+            <div class="message-card__user">
+                <div class="message-card__avatar">${getInitials(userName)}</div>
+                <span class="message-card__username">${userName}</span>
+            </div>
+            <span class="message-card__timestamp">${getCurrentTimestamp()}</span>
+        </div>
+        <div class="message-card__content">
+            <h4 style="margin:0; color:var(--color-primary);">${title}</h4>
+            <p>${message}</p>
+            <span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px; font-size:0.8rem;">${status}</span>
+        </div>
+    `;
+    
+    // Inserta al principio y actualizar interfaz
+    messagesContainer.appendChild(card); 
+    totalMessages++;
+    updateMessageCount();
+    hideEmptyState();
 }
 
 
@@ -264,6 +310,9 @@ async function handleUserVerify(event) {
     // PASO 1: Prevenir el comportamiento por defecto del formulario
     // Pista: event.preventDefault()
     event.preventDefault();
+
+    //Limpiamos todo ANTES de la nueva consulta
+    resetAppState();
     
     // PASO 2: Validar el formulario
     // Si no es válido, detener la ejecución (return)
@@ -273,7 +322,6 @@ async function handleUserVerify(event) {
     
     // PASO 3: Obtener los valores de los campos
     try {
-        // PASO 3: Obtener los valores de la base de datos
         const response = await fetch('http://localhost:3000/users');
         const users = await response.json();
 
@@ -281,6 +329,7 @@ async function handleUserVerify(event) {
         const userFound = users.find(u => u.name.toLowerCase() === nameToSearch.toLowerCase());
 
         if (userFound) {
+            currentUser = userFound;
             // Si es válido, limpiamos errores y llenamos la tarjeta blanca
             clearError(userNameError);
             infoEmail.textContent = userFound.email;
@@ -289,26 +338,34 @@ async function handleUserVerify(event) {
             // Mostramos la tarjeta blanca (le quitamos hidden)
             userInfoDisplay.classList.remove('hidden');
             console.log("Usuario encontrado:", userFound.name);
+            taskSection.classList.remove('disabled-section');
         } else {
             // Si no existe, mostramos error y ocultamos la tarjeta
-            showError(userNameError, "Usuario no encontrado en la base de datos.");
+            showError(userNameError, "Usuario no encontrado en la base de datos. Registro deshabilitado.");
             userInfoDisplay.classList.add('hidden');
+            taskSection.classList.add('disabled-section');
         }
 
     } catch (error) {
         showError(userNameError, "Error: Asegúrate de que el servidor esté activo.");
         console.error("Detalle del error:", error);
     }
-    // PASO 4: Crear el nuevo elemento de mensaje
-    // Llamar a createMessageElement con los valores obtenidos
+}
     
-    // PASO 5: Limpiar el formulario
-    // Pista: messageForm.reset()
-    
-    // PASO 6: Limpiar los errores
-    
-    // PASO 7: Opcional - Enfocar el primer campo para facilitar agregar otro mensaje
-    // Pista: userNameInput.focus()
+    function handleTaskSubmit(event) {
+    event.preventDefault();
+    if(!currentUser) return;
+    const title = document.getElementById('taskTitle').value;
+    const desc = document.getElementById('userMessage').value;
+    const status = document.getElementById('taskStatus').value;
+
+    //Validación de campos de tarea y creación dinámica
+    if (isValidInput(title) && isValidInput(desc)) {
+        createMessageElement(currentUser.name, title, desc, status);
+        taskForm.reset(); // Limpia el formulario tras guardar
+    } else {
+        alert("Por favor completa todos los campos de la tarea.");
+    }
 }
 
 /**
@@ -318,6 +375,7 @@ function handleInputChange() {
     // TODO: Implementar limpieza de errores al escribir
     // Esta función se ejecuta cuando el usuario escribe en un campo
     // Debe limpiar el error de ese campo específico
+    clearError(userNameError);
 }
 
 
@@ -334,6 +392,7 @@ function handleInputChange() {
 
 //Registramos el evento 'submit' en el formulario para la consulta
 messageForm.addEventListener('submit', handleUserVerify);
+taskForm.addEventListener('submit', handleTaskSubmit);
 
 // TODO: Registrar eventos 'input' en los campos para limpiar errores al escribir
 // Pista: userNameInput.addEventListener('input', handleInputChange);
@@ -351,19 +410,22 @@ userNameInput.addEventListener('input', handleInputChange);
  * PREGUNTAS DE REFLEXIÓN:
  * 
  * 1. ¿Qué elemento del DOM estás seleccionando?
- *    R: 
+ *    R: Formularios, campos de entrada, los contenedores y contadores
  * 
  * 2. ¿Qué evento provoca el cambio en la página?
- *    R: 
+ *    R: El evento submit de los botones, verifica del usuario con la base de datos 
+ *    y la creacion de la nueva tarea 
  * 
  * 3. ¿Qué nuevo elemento se crea?
- *    R: 
+ *    R: Un elemento div usando la propiedad innerHTML para mostrar los datos de la tarea
  * 
  * 4. ¿Dónde se inserta ese elemento dentro del DOM?
- *    R: 
+ *    R: Denro del #messageContainer al usar appenChild
  * 
  * 5. ¿Qué ocurre en la página cada vez que repites la acción?
- *    R: 
+ *    R: Se añade una nueva tarea al listado, el contador aumenta en 1, al ingresar un nuevo usuario la
+ *    lista de tareas se limpia, y en caso de que el nuevo usuario no aparezca en la base de datos
+ *    o no se le de al boton consultar, no permite registrar tareas
  */
 
 
@@ -374,7 +436,7 @@ userNameInput.addEventListener('input', handleInputChange);
 /**
  * Esta función se ejecuta cuando el DOM está completamente cargado
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ DOM completamente cargado');
     console.log('📝 Aplicación de registro de mensajes iniciada');
     
