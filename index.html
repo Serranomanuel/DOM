@@ -10,17 +10,53 @@
     <div class="container">
         <!-- Encabezado principal -->
         <header class="header">
-            <h1 class="header__title">Registro de Mensajes</h1>
+            <h1 class="header__title">Busqueda de Usuarios y manipulación del DOM0</h1>
             <p class="header__subtitle">Practica la manipulación del DOM en tiempo real</p>
         </header>
 
+        <section class="form-section">
+            <div class="card">
+                <h2 class="card__title">Buscar Usuario</h2>
+                <form id="messageForm" class="form" novalidate>
+                    <div class="form__group">
+                        <label for="userName" class="form__label">
+                            Nombre del usuario
+                        </label>
+                        <input 
+                            type="text"
+                            id="userName"
+                            class="form__input"
+                            placeholder="Ingresa tu usuario"
+                            aria-required="true"
+                        >
+                        <span class="form__error" id="userNameError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="userName" class="form__label">
+                            Id del Usuario
+                        </label>
+                        <input 
+                            type="text"
+                            id="userName"
+                            class="form__input"
+                            placeholder="Ingresa tu usuario"
+                            aria-required="true"
+                        >
+                        <span class="form__error" id="userNameError"></span>
+                    </div>
+                    <button type="submit" class="btn btn--primary" id="submitBtn">
+                        <span class="btn__text">Buscar</span>
+                    </button>
+                </form>
+            </div>
+        </section>
         <!-- Formulario de entrada -->
         <section class="form-section">
             <div class="card">
-                <h2 class="card__title">Nuevo Mensaje</h2>
-                
+                <h2 class="card__title">Asignacion de tareas</h2>
                 <form id="messageForm" class="form" novalidate>
-                    <div class="form__group">
+                    <!-- <div class="form__group">
                         <label for="userName" class="form__label">
                             Nombre de usuario
                         </label>
@@ -32,16 +68,16 @@
                             aria-required="true"
                         >
                         <span class="form__error" id="userNameError"></span>
-                    </div>
+                    </div> -->
 
                     <div class="form__group">
                         <label for="userMessage" class="form__label">
-                            Tu mensaje
+                                Tareas
                         </label>
                         <textarea 
                             id="userMessage" 
                             class="form__input form__textarea" 
-                            placeholder="Escribe tu mensaje aquí..."
+                            placeholder="Asigna las tareas aquí..."
                             rows="4"
                             aria-required="true"
                         ></textarea>
