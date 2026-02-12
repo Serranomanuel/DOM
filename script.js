@@ -6,7 +6,7 @@
  * Objetivo: Aplicar conceptos del DOM para seleccionar elementos,
  * responder a eventos y crear nuevos elementos dinámicamente.
  * 
- * Autores: [Manuel Enrique Serrano Barajas
+ * Autores: [Manuel  Serrano Barajas
  *           Wilmer Ferney Ardila Ordoñez]
  * Fecha:   [12/02/2026]
  * ============================================
