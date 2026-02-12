@@ -33,6 +33,23 @@
                         >
                         <span class="form__error" id="userNameError"></span>
                     </div>
+                    <button type="submit" class="btn btn--primary" id="submitBtn">
+                        <span class="btn__text">Consultar</span>
+                    </button>
+                </form>
+                <div id="userInfoDisplay" class="message-card hidden">
+            <div class="message-card__header">
+                <span class="message-card__username">Perfil Verificado</span>
+                <span class="message-card__timestamp">Activo</span>
+            </div>
+            <div class="message-card__content">
+                <p><strong>Email:</strong> <span id="infoEmail">---</span></p>
+                <p><strong>ID de Usuario:</strong> <span id="infoID">---</span></p>
+            </div>
+            </div>
+        </section>
+        <section class="form-section">
+            <div class="card">
                     <div class="form__group">
                     <label for="taskTitle" class="form__label">
                         Título de la Tarea
@@ -70,10 +87,8 @@
                     <button type="submit" class="btn btn--primary" id="submitBtn">
                         <span class="btn__text">Guardar Tarea</span>
                     </button>
-                </form>
             </div>
         </section>
-
         <!-- Área de mensajes -->
         <section class="messages-section">
             <div class="messages-header">

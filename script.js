@@ -20,31 +20,35 @@
  * Usamos getElementById para obtener referencias a los elementos únicos.
  */
 
-// Formulario
-const messageForm = document.getElementById('messageForm');
-
-// Campos de entrada
+// Formulario de consulta
+const userForm = document.getElementById('messageForm'); 
 const userNameInput = document.getElementById('userName');
-const userMessageInput = document.getElementById('userMessage');
 
-// Botón de envío
-const submitBtn = document.getElementById('submitBtn');
+// Botón de consulta
+const btnVerifyUser = document.getElementById('submitBtn');
+
+// Elementos de información de usuario
+const userInfoDisplay = document.getElementById('userInfoDisplay');
+const infoEmail = document.getElementById('infoEmail');
+const infoID = document.getElementById('infoID');
+
+// Campos de Tarea
+const taskTitleInput = document.getElementById('taskTitle');
+const userMessageInput = document.getElementById('userMessage');
+const taskStatusInput = document.getElementById('taskStatus');
+
+// Contenedor de mensajes y contadores
+const messagesContainer = document.getElementById('messagesContainer');
+const emptyState = document.getElementById('emptyState');
+const messageCount = document.getElementById('messageCount');
 
 // Elementos para mostrar errores
 const userNameError = document.getElementById('userNameError');
 const userMessageError = document.getElementById('userMessageError');
 
-// Contenedor donde se mostrarán los mensajes
-const messagesContainer = document.getElementById('messagesContainer');
-
-// Estado vacío (mensaje que se muestra cuando no hay mensajes)
-const emptyState = document.getElementById('emptyState');
-
-// Contador de mensajes
-const messageCount = document.getElementById('messageCount');
-
-// Variable para llevar el conteo de mensajes
+// Estado de la aplicación
 let totalMessages = 0;
+let currentUser = null;
 
 
 // ============================================
@@ -60,6 +64,7 @@ function isValidInput(value) {
     // TODO: Implementar validación
     // Pista: usa trim() para eliminar espacios al inicio y final
     // Retorna true si después de trim() el string tiene longitud > 0
+    return value.trim().length > 0;
 }
 
 /**
@@ -70,6 +75,7 @@ function isValidInput(value) {
 function showError(errorElement, message) {
     // TODO: Implementar función para mostrar error
     // Pista: asigna el mensaje al textContent del elemento
+    errorElement.textContent = message;
 }
 
 /**
@@ -79,6 +85,7 @@ function showError(errorElement, message) {
 function clearError(errorElement) {
     // TODO: Implementar función para limpiar error
     // Pista: asigna un string vacío al textContent
+    errorElement.textContent = "";
 }
 
 /**
@@ -117,6 +124,18 @@ function validateForm() {
     
     return isValid;
     */
+    const userName = userNameInput.value;
+    let isValid = true;
+    
+    // Validar nombre
+    if (!isValidInput(userName)) {
+        showError(userNameError, "El nombre es obligatorio para la consulta.");
+        isValid = false;
+    } else {
+        clearError(userNameError);
+    }
+    
+    return isValid;
 }
 
 /**
@@ -147,6 +166,11 @@ function getInitials(name) {
     // 2. Tomar la primera letra de cada palabra
     // 3. Unirlas y convertirlas a mayúsculas
     // 4. Si solo hay una palabra, retornar las dos primeras letras
+    const words = name.split(' ');
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
 }
 
 /**
@@ -156,6 +180,14 @@ function updateMessageCount() {
     // TODO: Implementar actualización del contador
     // Pista: Usa template literals para crear el texto
     // Formato: "X mensaje(s)" o "X mensajes"
+    // Selecciona el elemento del DOM donde se muestra el contador de tareas.
+
+  // Usamos un template literal para construir el texto dinámicamente.
+  // `${totalMessages}` inserta el número actual de tareas.
+  // El operador ternario decide si mostrar "tarea" (singular) o "tareas" (plural).
+  // - Si totalMessages === 1 → "1 tarea"
+  // - En cualquier otro caso → "X tareas"
+    messageCount.textContent = `${totalMessages} ${totalMessages === 1 ? "tarea" : "tareas"}`;
 }
 
 /**
@@ -164,6 +196,7 @@ function updateMessageCount() {
 function hideEmptyState() {
     // TODO: Implementar función para ocultar el estado vacío
     // Pista: Agrega la clase 'hidden' al elemento emptyState
+    if (emptyState) emptyState.classList.add('hidden');
 }
 
 /**
@@ -172,6 +205,7 @@ function hideEmptyState() {
 function showEmptyState() {
     // TODO: Implementar función para mostrar el estado vacío
     // Pista: Remueve la clase 'hidden' del elemento emptyState
+    if (emptyState) emptyState.classList.remove('hidden')
 }
 
 
@@ -224,17 +258,47 @@ function createMessageElement(userName, message) {
  * Maneja el evento de envío del formulario
  * @param {Event} event - Evento del formulario
  */
-function handleFormSubmit(event) {
+async function handleUserVerify(event) {
     // TODO: Implementar el manejador del evento submit
     
     // PASO 1: Prevenir el comportamiento por defecto del formulario
     // Pista: event.preventDefault()
+    event.preventDefault();
     
     // PASO 2: Validar el formulario
     // Si no es válido, detener la ejecución (return)
+    if (!validateForm()) return;
+
+    const nameToSearch = userNameInput.value.trim();
     
     // PASO 3: Obtener los valores de los campos
-    
+    try {
+        // PASO 3: Obtener los valores de la base de datos
+        const response = await fetch('http://localhost:3000/users');
+        const users = await response.json();
+
+        // PASO 4: Buscar el usuario
+        const userFound = users.find(u => u.name.toLowerCase() === nameToSearch.toLowerCase());
+
+        if (userFound) {
+            // Si es válido, limpiamos errores y llenamos la tarjeta blanca
+            clearError(userNameError);
+            infoEmail.textContent = userFound.email;
+            infoID.textContent = userFound.id;
+            
+            // Mostramos la tarjeta blanca (le quitamos hidden)
+            userInfoDisplay.classList.remove('hidden');
+            console.log("Usuario encontrado:", userFound.name);
+        } else {
+            // Si no existe, mostramos error y ocultamos la tarjeta
+            showError(userNameError, "Usuario no encontrado en la base de datos.");
+            userInfoDisplay.classList.add('hidden');
+        }
+
+    } catch (error) {
+        showError(userNameError, "Error: Asegúrate de que el servidor esté activo.");
+        console.error("Detalle del error:", error);
+    }
     // PASO 4: Crear el nuevo elemento de mensaje
     // Llamar a createMessageElement con los valores obtenidos
     
@@ -268,9 +332,15 @@ function handleInputChange() {
 // TODO: Registrar el evento 'submit' en el formulario
 // Pista: messageForm.addEventListener('submit', handleFormSubmit);
 
+//Registramos el evento 'submit' en el formulario para la consulta
+messageForm.addEventListener('submit', handleUserVerify);
+
 // TODO: Registrar eventos 'input' en los campos para limpiar errores al escribir
 // Pista: userNameInput.addEventListener('input', handleInputChange);
 // Pista: userMessageInput.addEventListener('input', handleInputChange);
+
+//Registramos el evento 'input' para limpiar errores al escribir
+userNameInput.addEventListener('input', handleInputChange);
 
 
 // ============================================

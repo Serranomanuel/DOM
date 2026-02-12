@@ -413,6 +413,27 @@ body {
     word-wrap: break-word;
 }
 
+/* Tarjeta de información de usuario (aparece al consultar) */
+.user-info-card {
+    margin-top: var(--spacing-lg);
+    background-color: #ffffff !important; 
+    border-left: 4px solid var(--color-success) !important; /* Delineado verde de éxito */
+    border: 1px solid #000000;
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+}
+
+/* Estilo para los datos dentro de esa tarjeta */
+.user-info-card p {
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-base);
+}
+
+.user-info-card strong {
+    color: var(--color-primary);
+}
+
 /* ============================================
    FOOTER
    ============================================ */
