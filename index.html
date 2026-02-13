@@ -16,7 +16,8 @@
 
         <section class="form-section">
             <div class="card">
-                <h2 class="card__title">Buscar Usuario</h2>
+                <h2 class="card__title">Consultar usuario</h2>
+
                 <form id="messageForm" class="form" novalidate>
                     <div class="form__group">
                         <label for="userName" class="form__label">
@@ -68,35 +69,72 @@
                             aria-required="true"
                         >
                         <span class="form__error" id="userNameError"></span>
-                    </div> -->
+                    </div>
+                    <button type="submit" class="btn btn--primary" id="btnConsultar">
+                        <span class="btn__text">Consultar</span>
+                    </button>
+                </form>
+                <div id="userInfoDisplay" class="user-info-card hidden">
+            <div class="message-card__header">
+                <span class="message-card__username">Perfil Verificado</span>
+                <span class="message-card__timestamp">Activo</span>
+            </div>
+            <div class="message-card__content">
+                <p><strong>Email:</strong> <span id="infoEmail">---</span></p>
+                <p><strong>ID de Usuario:</strong> <span id="infoID">---</span></p>
+            </div>
+            </div>
+            </div>
+        </section>
 
+        <section id="taskSection"   class="form-section disabled-section">
+            <div class="card">
+                <h2 class="card__title">Registrar Tarea</h2>
+                <form id="taskForm" class="form">
+                    <div class="form__group">
+                    <label for="taskTitle" class="form__label">
+                        Título de la Tarea
+                    </label>
+                    <input 
+                            type="text" 
+                            id="taskTitle" 
+                            class="form__input" 
+                            placeholder="Ej: Estudiar el DOM"
+                            aria-required="true"
+                        >
+                        <span class="form__error" id="taskTitleError"></span>
+                    </div>
                     <div class="form__group">
                         <label for="userMessage" class="form__label">
-                                Tareas
+                            Descripción detallada
                         </label>
                         <textarea 
                             id="userMessage" 
                             class="form__input form__textarea" 
-                            placeholder="Asigna las tareas aquí..."
-                            rows="4"
-                            aria-required="true"
-                        ></textarea>
+                            placeholder="Describe los pasos de la tarea..."
+                            rows="3"
+                            aria-required="true"></textarea>
                         <span class="form__error" id="userMessageError"></span>
                     </div>
-
-                    <button type="submit" class="btn btn--primary" id="submitBtn">
-                        <span class="btn__text">Agregar Mensaje</span>
-                        <span class="btn__icon">➤</span>
+                    <div class="form__group">
+                    <label for="taskStatus" class="form__label">Estado Inicial</label>
+                    <select id="taskStatus" class="form__input">
+                        <option value="Completada">Completada</option>
+                        <option value="En Progreso">En Progreso</option>
+                        <option value="Pendiente">Pendiente</option>
+                    </select>
+                    </div>
+                    <button type="submit" class="btn btn--primary" id="btnGuardar">
+                        <span class="btn__text">Guardar Tarea</span>
                     </button>
                 </form>
             </div>
         </section>
-
         <!-- Área de mensajes -->
         <section class="messages-section">
             <div class="messages-header">
-                <h2 class="messages-header__title">Mensajes Publicados</h2>
-                <span class="messages-header__count" id="messageCount">0 mensajes</span>
+                <h2 class="messages-header__title">Tareas enviadas</h2>
+                <span class="messages-header__count" id="messageCount">0 tareas</span>
             </div>
             
             <div id="messagesContainer" class="messages-container">
@@ -105,8 +143,8 @@
                     <svg class="messages-empty__icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <p class="messages-empty__text">Aún no hay mensajes</p>
-                    <p class="messages-empty__subtext">Completa el formulario para agregar tu primer mensaje</p>
+                    <p class="messages-empty__text">Aún no hay tareas</p>
+                    <p class="messages-empty__subtext">Consulta tu usuario para poder guardar tareas</p>
                 </div>
             </div>
         </section>
@@ -116,7 +154,6 @@
             <p class="footer__text">Ejercicio de manipulación del DOM | SENA - Desarrollo Web</p>
         </footer>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

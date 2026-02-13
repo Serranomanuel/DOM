@@ -6,8 +6,9 @@
  * Objetivo: Aplicar conceptos del DOM para seleccionar elementos,
  * responder a eventos y crear nuevos elementos dinámicamente.
  * 
- * Autor: [Tu nombre aquí]
- * Fecha: [Fecha actual]
+ * Autores: [Manuel Enrique Serrano Barajas
+ *           Wilmer Ferney Ardila Ordoñez]
+ * Fecha:   [12/02/2026]
  * ============================================
  */
 
@@ -20,31 +21,40 @@
  * Usamos getElementById para obtener referencias a los elementos únicos.
  */
 
-// Formulario
-const messageForm = document.getElementById('messageForm');
-
-// Campos de entrada
+// Formulario de consulta
+const userForm = document.getElementById('messageForm'); 
 const userNameInput = document.getElementById('userName');
-const userMessageInput = document.getElementById('userMessage');
 
-// Botón de envío
-const submitBtn = document.getElementById('submitBtn');
+//Formulario consulta tareas
+const messageForm = document.getElementById('messageForm'); // Form consulta
+const taskForm = document.getElementById('taskForm');       // Form tareas
+const taskSection = document.getElementById('taskSection');
+
+// Botón de consulta
+const btnVerifyUser = document.getElementById('submitBtn');
+
+// Elementos de información de usuario
+const userInfoDisplay = document.getElementById('userInfoDisplay');
+const infoEmail = document.getElementById('infoEmail');
+const infoID = document.getElementById('infoID');
+
+// Campos de Tarea
+const taskTitleInput = document.getElementById('taskTitle');
+const userMessageInput = document.getElementById('userMessage');
+const taskStatusInput = document.getElementById('taskStatus');
+
+// Contenedor de mensajes y contadores
+const messagesContainer = document.getElementById('messagesContainer');
+const emptyState = document.getElementById('emptyState');
+const messageCount = document.getElementById('messageCount');
 
 // Elementos para mostrar errores
 const userNameError = document.getElementById('userNameError');
 const userMessageError = document.getElementById('userMessageError');
 
-// Contenedor donde se mostrarán los mensajes
-const messagesContainer = document.getElementById('messagesContainer');
-
-// Estado vacío (mensaje que se muestra cuando no hay mensajes)
-const emptyState = document.getElementById('emptyState');
-
-// Contador de mensajes
-const messageCount = document.getElementById('messageCount');
-
-// Variable para llevar el conteo de mensajes
+// Estado de la aplicación
 let totalMessages = 0;
+let currentUser = null;
 
 
 // ============================================
@@ -60,6 +70,7 @@ function isValidInput(value) {
     // TODO: Implementar validación
     // Pista: usa trim() para eliminar espacios al inicio y final
     // Retorna true si después de trim() el string tiene longitud > 0
+    return value.trim().length > 0;
 }
 
 /**
@@ -70,6 +81,7 @@ function isValidInput(value) {
 function showError(errorElement, message) {
     // TODO: Implementar función para mostrar error
     // Pista: asigna el mensaje al textContent del elemento
+    errorElement.textContent = message;
 }
 
 /**
@@ -79,6 +91,7 @@ function showError(errorElement, message) {
 function clearError(errorElement) {
     // TODO: Implementar función para limpiar error
     // Pista: asigna un string vacío al textContent
+    errorElement.textContent = "";
 }
 
 /**
@@ -117,6 +130,18 @@ function validateForm() {
     
     return isValid;
     */
+    const userName = userNameInput.value;
+    let isValid = true;
+    
+    // Validar nombre
+    if (!isValidInput(userName)) {
+        showError(userNameError, "El nombre es obligatorio para la consulta.");
+        isValid = false;
+    } else {
+        clearError(userNameError);
+    }
+    
+    return isValid;
 }
 
 /**
@@ -147,6 +172,11 @@ function getInitials(name) {
     // 2. Tomar la primera letra de cada palabra
     // 3. Unirlas y convertirlas a mayúsculas
     // 4. Si solo hay una palabra, retornar las dos primeras letras
+    const words = name.split(' ');
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
 }
 
 /**
@@ -156,6 +186,14 @@ function updateMessageCount() {
     // TODO: Implementar actualización del contador
     // Pista: Usa template literals para crear el texto
     // Formato: "X mensaje(s)" o "X mensajes"
+    // Selecciona el elemento del DOM donde se muestra el contador de tareas.
+
+  // Usamos un template literal para construir el texto dinámicamente.
+  // `${totalMessages}` inserta el número actual de tareas.
+  // El operador ternario decide si mostrar "tarea" (singular) o "tareas" (plural).
+  // - Si totalMessages === 1 → "1 tarea"
+  // - En cualquier otro caso → "X tareas"
+    messageCount.textContent = `${totalMessages} ${totalMessages === 1 ? "tarea" : "tareas"}`;
 }
 
 /**
@@ -164,6 +202,7 @@ function updateMessageCount() {
 function hideEmptyState() {
     // TODO: Implementar función para ocultar el estado vacío
     // Pista: Agrega la clase 'hidden' al elemento emptyState
+    if (emptyState) emptyState.classList.add('hidden');
 }
 
 /**
@@ -172,6 +211,22 @@ function hideEmptyState() {
 function showEmptyState() {
     // TODO: Implementar función para mostrar el estado vacío
     // Pista: Remueve la clase 'hidden' del elemento emptyState
+    if (emptyState) emptyState.classList.remove('hidden')
+}
+
+function resetAppState() {
+    // Borra las tareas visuales y regresa el mensaje de "No hay tareas"
+    messagesContainer.innerHTML = ''; 
+    messagesContainer.appendChild(emptyState);
+    
+    // Resetea contadores y lógica
+    totalMessages = 0;
+    currentUser = null;
+    updateMessageCount();
+    showEmptyState();
+
+    // Bloquea la sección de tareas por seguridad
+    taskSection.classList.add('disabled-section');
 }
 
 
@@ -184,7 +239,7 @@ function showEmptyState() {
  * @param {string} userName - Nombre del usuario
  * @param {string} message - Contenido del mensaje
  */
-function createMessageElement(userName, message) {
+function createMessageElement(userName, title, message, status) {
     // TODO: Implementar la creación de un nuevo mensaje
     
     // PASO 1: Crear el contenedor principal del mensaje
@@ -213,6 +268,32 @@ function createMessageElement(userName, message) {
     // PASO 5: Actualizar el contador visual
     
     // PASO 6: Ocultar el estado vacío si está visible
+
+    // Creación dinámica de la tarjeta de tarea
+    const card = document.createElement('div');
+    card.className = 'message-card';
+    
+    //Estructura HTML inyectada con datos dinámicos
+    card.innerHTML = `
+        <div class="message-card__header">
+            <div class="message-card__user">
+                <div class="message-card__avatar">${getInitials(userName)}</div>
+                <span class="message-card__username">${userName}</span>
+            </div>
+            <span class="message-card__timestamp">${getCurrentTimestamp()}</span>
+        </div>
+        <div class="message-card__content">
+            <h4 style="margin:0; color:var(--color-primary);">${title}</h4>
+            <p>${message}</p>
+            <span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px; font-size:0.8rem;">${status}</span>
+        </div>
+    `;
+    
+    // Inserta al principio y actualizar interfaz
+    messagesContainer.appendChild(card); 
+    totalMessages++;
+    updateMessageCount();
+    hideEmptyState();
 }
 
 
@@ -224,27 +305,68 @@ function createMessageElement(userName, message) {
  * Maneja el evento de envío del formulario
  * @param {Event} event - Evento del formulario
  */
-function handleFormSubmit(event) {
+async function handleUserVerify(event) {
     // TODO: Implementar el manejador del evento submit
     
     // PASO 1: Prevenir el comportamiento por defecto del formulario
     // Pista: event.preventDefault()
+    event.preventDefault();
+
+    //Limpiamos todo ANTES de la nueva consulta
+    resetAppState();
     
     // PASO 2: Validar el formulario
     // Si no es válido, detener la ejecución (return)
+    if (!validateForm()) return;
+
+    const nameToSearch = userNameInput.value.trim();
     
     // PASO 3: Obtener los valores de los campos
+    try {
+        const response = await fetch('http://localhost:3000/users');
+        const users = await response.json();
+
+        // PASO 4: Buscar el usuario
+        const userFound = users.find(u => u.name.toLowerCase() === nameToSearch.toLowerCase());
+
+        if (userFound) {
+            currentUser = userFound;
+            // Si es válido, limpiamos errores y llenamos la tarjeta blanca
+            clearError(userNameError);
+            infoEmail.textContent = userFound.email;
+            infoID.textContent = userFound.id;
+            
+            // Mostramos la tarjeta blanca (le quitamos hidden)
+            userInfoDisplay.classList.remove('hidden');
+            console.log("Usuario encontrado:", userFound.name);
+            taskSection.classList.remove('disabled-section');
+        } else {
+            // Si no existe, mostramos error y ocultamos la tarjeta
+            showError(userNameError, "Usuario no encontrado en la base de datos. Registro deshabilitado.");
+            userInfoDisplay.classList.add('hidden');
+            taskSection.classList.add('disabled-section');
+        }
+
+    } catch (error) {
+        showError(userNameError, "Error: Asegúrate de que el servidor esté activo.");
+        console.error("Detalle del error:", error);
+    }
+}
     
-    // PASO 4: Crear el nuevo elemento de mensaje
-    // Llamar a createMessageElement con los valores obtenidos
-    
-    // PASO 5: Limpiar el formulario
-    // Pista: messageForm.reset()
-    
-    // PASO 6: Limpiar los errores
-    
-    // PASO 7: Opcional - Enfocar el primer campo para facilitar agregar otro mensaje
-    // Pista: userNameInput.focus()
+    function handleTaskSubmit(event) {
+    event.preventDefault();
+    if(!currentUser) return;
+    const title = document.getElementById('taskTitle').value;
+    const desc = document.getElementById('userMessage').value;
+    const status = document.getElementById('taskStatus').value;
+
+    //Validación de campos de tarea y creación dinámica
+    if (isValidInput(title) && isValidInput(desc)) {
+        createMessageElement(currentUser.name, title, desc, status);
+        taskForm.reset(); // Limpia el formulario tras guardar
+    } else {
+        alert("Por favor completa todos los campos de la tarea.");
+    }
 }
 
 /**
@@ -254,6 +376,7 @@ function handleInputChange() {
     // TODO: Implementar limpieza de errores al escribir
     // Esta función se ejecuta cuando el usuario escribe en un campo
     // Debe limpiar el error de ese campo específico
+    clearError(userNameError);
 }
 
 
@@ -268,9 +391,16 @@ function handleInputChange() {
 // TODO: Registrar el evento 'submit' en el formulario
 // Pista: messageForm.addEventListener('submit', handleFormSubmit);
 
+//Registramos el evento 'submit' en el formulario para la consulta
+messageForm.addEventListener('submit', handleUserVerify);
+taskForm.addEventListener('submit', handleTaskSubmit);
+
 // TODO: Registrar eventos 'input' en los campos para limpiar errores al escribir
 // Pista: userNameInput.addEventListener('input', handleInputChange);
 // Pista: userMessageInput.addEventListener('input', handleInputChange);
+
+//Registramos el evento 'input' para limpiar errores al escribir
+userNameInput.addEventListener('input', handleInputChange);
 
 
 // ============================================
@@ -281,19 +411,22 @@ function handleInputChange() {
  * PREGUNTAS DE REFLEXIÓN:
  * 
  * 1. ¿Qué elemento del DOM estás seleccionando?
- *    R: 
+ *    R: Formularios, campos de entrada, los contenedores y contadores
  * 
  * 2. ¿Qué evento provoca el cambio en la página?
- *    R: 
+ *    R: El evento submit de los botones, verifica del usuario con la base de datos 
+ *    y la creacion de la nueva tarea 
  * 
  * 3. ¿Qué nuevo elemento se crea?
- *    R: 
+ *    R: Un elemento div usando la propiedad innerHTML para mostrar los datos de la tarea
  * 
  * 4. ¿Dónde se inserta ese elemento dentro del DOM?
- *    R: 
+ *    R: Denro del #messageContainer al usar appenChild
  * 
  * 5. ¿Qué ocurre en la página cada vez que repites la acción?
- *    R: 
+ *    R: Se añade una nueva tarea al listado, el contador aumenta en 1, al ingresar un nuevo usuario la
+ *    lista de tareas se limpia, y en caso de que el nuevo usuario no aparezca en la base de datos
+ *    o no se le de al boton consultar, no permite registrar tareas
  */
 
 
@@ -304,7 +437,7 @@ function handleInputChange() {
 /**
  * Esta función se ejecuta cuando el DOM está completamente cargado
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ DOM completamente cargado');
     console.log('📝 Aplicación de registro de mensajes iniciada');
     
