@@ -340,6 +340,13 @@ async function handleUserVerify(event) {
             userInfoDisplay.classList.remove('hidden');
             console.log("Usuario encontrado:", userFound.name);
             taskSection.classList.remove('disabled-section');
+
+            //Se cargan las tareas que ya existen desde la Base de datos
+            const taskResponse = await fetch (`http://localhost:3000/tasks?userId=${userFound.id}`);
+            const userTasks = await taskResponse.json();
+            userTasks.forEach (t => {
+                createMessageElement(userFound.name, t.title, t.description, t.status)
+            });
         } else {
             // Si no existe, mostramos error y ocultamos la tarjeta
             showError(userNameError, "Usuario no encontrado en la base de datos. Registro deshabilitado.");
@@ -353,7 +360,7 @@ async function handleUserVerify(event) {
     }
 }
     
-    function handleTaskSubmit(event) {
+async function handleTaskSubmit(event) {
     event.preventDefault();
     if(!currentUser) return;
     const title = document.getElementById('taskTitle').value;
@@ -362,8 +369,30 @@ async function handleUserVerify(event) {
 
     //Validación de campos de tarea y creación dinámica
     if (isValidInput(title) && isValidInput(desc)) {
-        createMessageElement(currentUser.name, title, desc, status);
-        taskForm.reset(); // Limpia el formulario tras guardar
+        const newTask = {
+            //La estructura de la base de datos
+            userId: currentUser.id,
+            title: title,
+            description: desc, 
+            status: status,
+            date: getCurrentTimestamp()
+        };
+        try {
+            //Enviarlo a la base de datos, para que wse guarde
+            const response = await fetch ('http://localhost:3000/tasks', {
+                method: 'POST',
+                headers: {'Content-Type': 'aplication/json'},
+                body: JSON.stringify(newTask)
+            });
+
+            if (response.ok){
+                //Si el server acepta se crea la tarea y la muestra en la pagina
+                createMessageElement(currentUser.name, title, desc, status)
+                taskForm.reset();
+            }
+        } catch (error) {
+            alert("Error al guardar la tarea en el servidor.");
+        }
     } else {
         alert("Por favor completa todos los campos de la tarea.");
     }
