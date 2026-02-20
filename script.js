@@ -319,18 +319,17 @@ async function handleUserVerify(event) {
     // Si no es válido, detener la ejecución (return)
     if (!validateForm()) return;
 
-    const nameToSearch = userNameInput.value.trim();
+    const idToSearch = userNameInput.value.trim();
     
     // PASO 3: Obtener los valores de los campos
     try {
-        const response = await fetch('http://localhost:3000/users');
-        const users = await response.json();
-
+        const response = await fetch(`http://localhost:3000/users/${idToSearch}`);
+        
         // PASO 4: Buscar el usuario
-        const userFound = users.find(u => u.name.toLowerCase() === nameToSearch.toLowerCase());
-
-        if (userFound) {
+        if (response.ok) {
+            const userFound = await response.json();
             currentUser = userFound;
+
             // Si es válido, limpiamos errores y llenamos la tarjeta blanca
             clearError(userNameError);
             infoEmail.textContent = userFound.email;
@@ -349,7 +348,7 @@ async function handleUserVerify(event) {
             });
         } else {
             // Si no existe, mostramos error y ocultamos la tarjeta
-            showError(userNameError, "Usuario no encontrado en la base de datos. Registro deshabilitado.");
+            showError(userNameError, "Id de usuario no encontrado en la base de datos. Registro deshabilitado.");
             userInfoDisplay.classList.add('hidden');
             taskSection.classList.add('disabled-section');
         }
