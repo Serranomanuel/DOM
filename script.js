@@ -229,6 +229,58 @@ function resetAppState() {
     taskSection.classList.add('disabled-section');
 }
 
+//2.1, funciones de accion nuevas, para eliminar, y editar tareas
+async function deleteTask(id, cardElement) {
+    if (!confirm("¿Deseas eliminar esta tarea?")) return;
+    try {
+        const response = await fetch(`http://localhost:3000/tasks/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            cardElement.remove();
+            totalMessages--;
+            updateMessageCount();
+            if (totalMessages === 0) showEmptyState();
+        }
+    } catch (error) {
+        alert("Error al borrar la tarea.");
+    }
+}
+
+function makeEditable(card, taskId) {
+    const contentDiv = card.querySelector('.message-card__content');
+    const oldTitle = contentDiv.querySelector('.task-title').textContent;
+    const oldDesc = contentDiv.querySelector('.task-desc').textContent;
+
+    contentDiv.innerHTML = `
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">
+            <input type="text" class="edit-title" value="${oldTitle}" style="width:100%; padding:5px;">
+            <textarea class="edit-desc" style="width:100%; padding:5px;">${oldDesc}</textarea>
+            <div style="display:flex; gap:5px;">
+                <button class="btn-save" style="background:#28a745; color:white; border:none; padding:3px 8px; cursor:pointer;">Guardar</button>
+                <button class="btn-cancel" style="background:#6c757d; color:white; border:none; padding:3px 8px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+    `;
+
+    contentDiv.querySelector('.btn-cancel').onclick = () => handleUserVerify(new Event('submit'));
+    
+    contentDiv.querySelector('.btn-save').onclick = async () => {
+        const updatedTask = {
+            userId: currentUser.id,
+            title: contentDiv.querySelector('.edit-title').value,
+            description: contentDiv.querySelector('.edit-desc').value,
+            status: card.querySelector('.badge').textContent,
+            date: getCurrentTimestamp()
+        };
+
+        const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTask)
+        });
+
+        if (response.ok) handleUserVerify(new Event('submit'));
+    };
+}
 
 // ============================================
 // 3. CREACIÓN DE ELEMENTOS
@@ -239,7 +291,7 @@ function resetAppState() {
  * @param {string} userName - Nombre del usuario
  * @param {string} message - Contenido del mensaje
  */
-function createMessageElement(userName, title, message, status) {
+function createMessageElement(userName, title, message, status, taskId) {
     // TODO: Implementar la creación de un nuevo mensaje
     
     // PASO 1: Crear el contenedor principal del mensaje
@@ -272,25 +324,35 @@ function createMessageElement(userName, title, message, status) {
     // Creación dinámica de la tarjeta de tarea
     const card = document.createElement('div');
     card.className = 'message-card';
-    
+    card.setAttribute('data-id', taskId);
+
     //Estructura HTML inyectada con datos dinámicos
     card.innerHTML = `
-        <div class="message-card__header">
+        <div class="message-card__header" style="display:flex; justify-content:space-between; align-items: flex-start;>
             <div class="message-card__user">
                 <div class="message-card__avatar">${getInitials(userName)}</div>
                 <span class="message-card__username">${userName}</span>
             </div>
-            <span class="message-card__timestamp">${getCurrentTimestamp()}</span>
+            <div style="text-align:right;">
+                <span class="message-card__timestamp" style="display:block; font-size:0.8rem;">${getCurrentTimestamp()}</span>
+                <div class="task-btns" style="margin-top:5px;">
+                    <button class="btn-edit-text" style="font-size:0.7rem; cursor:pointer; padding: 2px 5px;">Editar</button>
+                    <button class="btn-delete-text" style="font-size:0.7rem; cursor:pointer; padding: 2px 5px; color:red;">Eliminar</button>
+                </div>
+            </div>
         </div>
         <div class="message-card__content">
-            <h4 style="margin:0; color:var(--color-primary);">${title}</h4>
-            <p>${message}</p>
+            <h4 class="task-title" style="margin:10px 0 5px 0; color:var(--color-primary);">${title}</h4>
+            <p class="task-desc">${message}</p>
             <span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px; font-size:0.8rem;">${status}</span>
         </div>
     `;
-    
+    //se conectan los botones edit y delete, con las funciones
+    card.querySelector('.btn-delete-text').onclick = () => deleteTask(taskId, card);
+    card.querySelector('.btn-edit-text').onclick = () => makeEditable(card, taskId);
+
     // Inserta al principio y actualizar interfaz
-    messagesContainer.appendChild(card); 
+    messagesContainer.prepend(card);
     totalMessages++;
     updateMessageCount();
     hideEmptyState();
@@ -344,7 +406,7 @@ async function handleUserVerify(event) {
             const taskResponse = await fetch (`http://localhost:3000/tasks?userId=${userFound.id}`);
             const userTasks = await taskResponse.json();
             userTasks.forEach (t => {
-                createMessageElement(userFound.name, t.title, t.description, t.status)
+                createMessageElement(userFound.name, t.title, t.description, t.status, t.id)
             });
         } else {
             // Si no existe, mostramos error y ocultamos la tarjeta
@@ -380,13 +442,14 @@ async function handleTaskSubmit(event) {
             //Enviarlo a la base de datos, para que wse guarde
             const response = await fetch ('http://localhost:3000/tasks', {
                 method: 'POST',
-                headers: {'Content-Type': 'aplication/json'},
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(newTask)
             });
 
+            //Si el server acepta se crea la tarea y la muestra en la pagina
             if (response.ok){
-                //Si el server acepta se crea la tarea y la muestra en la pagina
-                createMessageElement(currentUser.name, title, desc, status)
+                const savedTask = await response.json(); // Se obtiene la targeta con el id generado por el server
+                createMessageElement(currentUser.name, title, desc, status, savedTask.id)
                 taskForm.reset();
             }
         } catch (error) {
@@ -429,6 +492,7 @@ taskForm.addEventListener('submit', handleTaskSubmit);
 
 //Registramos el evento 'input' para limpiar errores al escribir
 userNameInput.addEventListener('input', handleInputChange);
+document.addEventListener('DOMContentLoaded', () => console.log('Sistema operativo'));
 
 
 // ============================================
