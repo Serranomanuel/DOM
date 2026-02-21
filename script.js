@@ -249,14 +249,32 @@ function makeEditable(card, taskId) {
     const contentDiv = card.querySelector('.message-card__content');
     const oldTitle = contentDiv.querySelector('.task-title').textContent;
     const oldDesc = contentDiv.querySelector('.task-desc').textContent;
-
+    const oldStatus = card.querySelector('.badge').textContent;
+    
     contentDiv.innerHTML = `
-        <div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">
-            <input type="text" class="edit-title" value="${oldTitle}" style="width:100%; padding:5px;">
-            <textarea class="edit-desc" style="width:100%; padding:5px;">${oldDesc}</textarea>
-            <div style="display:flex; gap:5px;">
-                <button class="btn-save" style="background:#28a745; color:white; border:none; padding:3px 8px; cursor:pointer;">Guardar</button>
-                <button class="btn-cancel" style="background:#6c757d; color:white; border:none; padding:3px 8px; cursor:pointer;">Cancelar</button>
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px; background: white; padding: 15px; border-radius: var(--radius-md); border: 1px solid var(--color-gray-200); box-shadow: var(--shadow-sm);">
+            <div class="form__group" style="margin-bottom:0">
+                <label class="form__label">Título</label>
+                <input type="text" class="form__input edit-title" value="${oldTitle}">
+            </div>
+            
+            <div class="form__group" style="margin-bottom:0">
+                <label class="form__label">Descripción</label>
+                <textarea class="form__input edit-desc" style="min-height:70px;">${oldDesc}</textarea>
+            </div>
+
+            <div class="form__group" style="margin-bottom:0">
+                <label class="form__label">Estado</label>
+                <select class="form__input edit-status">
+                    <option value="Pendiente" ${oldStatus === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                    <option value="En Progreso" ${oldStatus === 'En Progreso' ? 'selected' : ''}>En Progreso</option>
+                    <option value="Completado" ${oldStatus === 'Completado' ? 'selected' : ''}>Completado</option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:5px;">
+                <button class="btn btn--primary btn-save" style="padding: 5px 15px; font-size: 0.8rem; background: var(--color-success);">Guardar</button>
+                <button class="btn btn--primary btn-cancel" style="padding: 5px 15px; font-size: 0.8rem; background: var(--color-gray-500);">Cancelar</button>
             </div>
         </div>
     `;
@@ -268,17 +286,21 @@ function makeEditable(card, taskId) {
             userId: currentUser.id,
             title: contentDiv.querySelector('.edit-title').value,
             description: contentDiv.querySelector('.edit-desc').value,
-            status: card.querySelector('.badge').textContent,
+            status: contentDiv.querySelector('.edit-status').value,
             date: getCurrentTimestamp()
         };
 
-        const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedTask)
-        });
+        try {
+            const response = await fetch(`http://localhost:3000/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedTask)
+            });
 
-        if (response.ok) handleUserVerify(new Event('submit'));
+            if (response.ok) handleUserVerify(new Event('submit'));
+        } catch (error) {
+            alert("Error al actualizar");
+        }
     };
 }
 
@@ -327,24 +349,29 @@ function createMessageElement(userName, title, message, status, taskId) {
     card.setAttribute('data-id', taskId);
 
     //Estructura HTML inyectada con datos dinámicos
+    card.style.position = 'relative';
     card.innerHTML = `
-        <div class="message-card__header" style="display:flex; justify-content:space-between; align-items: flex-start;>
-            <div class="message-card__user">
+        <div class="message-card__header" style="display: flex; align-items: center;">
+            <div class="message-card__user" style="display: flex; align-items: center; gap: 10px;">
                 <div class="message-card__avatar">${getInitials(userName)}</div>
-                <span class="message-card__username">${userName}</span>
+                <span class="message-card__username" style="font-weight: bold; color: #333;">${userName}</span>
             </div>
-            <div style="text-align:right;">
-                <span class="message-card__timestamp" style="display:block; font-size:0.8rem;">${getCurrentTimestamp()}</span>
-                <div class="task-btns" style="margin-top:5px;">
-                    <button class="btn-edit-text" style="font-size:0.7rem; cursor:pointer; padding: 2px 5px;">Editar</button>
-                    <button class="btn-delete-text" style="font-size:0.7rem; cursor:pointer; padding: 2px 5px; color:red;">Eliminar</button>
+            
+            <div style="position: absolute; top: 10px; right: 15px; text-align: right;">
+                <span class="message-card__timestamp" style="display: block; font-size: 0.75rem; color: #777; margin-bottom: 2px;">
+                    ${getCurrentTimestamp()}
+                </span>
+                <div class="task-btns" style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button class="btn-edit-text" style="font-size: 0.7rem; cursor: pointer; background: var(--color-primary-lighter); border: 1px solid var(--color-primary-light); border-radius: var(--radius-sm); padding: 3px 8px; color: var(--color-primary); font-weight: bold; transition: 0.2s;">Editar</button>
+                    <button class="btn-delete-text" style="font-size: 0.7rem; cursor: pointer; background: #fff5f5; border: 1px solid #feb2b2; border-radius: var(--radius-sm); padding: 3px 8px; color: var(--color-error); font-weight: bold; transition: 0.2s;">Eliminar</button>
                 </div>
             </div>
         </div>
-        <div class="message-card__content">
-            <h4 class="task-title" style="margin:10px 0 5px 0; color:var(--color-primary);">${title}</h4>
-            <p class="task-desc">${message}</p>
-            <span class="badge" style="background:#eee; padding:2px 8px; border-radius:4px; font-size:0.8rem;">${status}</span>
+
+        <div class="message-card__content" style="margin-top: 15px;">
+            <h4 class="task-title" style="margin: 0; color: var(--color-primary);">${title}</h4>
+            <p class="task-desc" style="margin: 5px 0; color: #555;">${message}</p>
+            <span class="badge" style="background: #f0f0f0; padding: 2px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid #e0e0e0;">${status}</span>
         </div>
     `;
     //se conectan los botones edit y delete, con las funciones
